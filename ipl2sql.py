@@ -6,15 +6,24 @@ IN_FIELD = 'IN'
 OUT_FIELD = 'OUT'
 SRC_FIELD = 'SRC'
 DST_FIELD = 'DST'
+SPT_FIELD = 'SPT'
+DPT_FIELD = 'DPT'
 
 USED_FIELDS = [
     IN_FIELD,
     OUT_FIELD,
     SRC_FIELD,
     DST_FIELD,
-    LENGTH_FIELD
+    SPT_FIELD,
+    DPT_FIELD,
+    LENGTH_FIELD,
 ]
 
+FIELD_TYPES = {
+    LENGTH_FIELD: int,
+    SPT_FIELD: int,
+    DPT_FIELD: int
+}
 PACKETS_PER_BLOCK = 1000
 
 ARG_NAMES = ['log_path', 'table_name']
@@ -66,32 +75,39 @@ else:
 log = open(settings.log_path, 'r')
 fields_re = re.compile(r'([A-Z]+)=([^ ]+)( |$|\n)')
 line_count = 0
+error_count = 0
 
 try:
     current_block = []
     print clear_table(settings.table_name)
     for line in log:
         packet = {}
-        for name,value,_ in fields_re.findall(line):
-            if name == LENGTH_FIELD:
-                value = int(value)
-                if name in packet:
-                    packet[name] += value
-                    continue
-            packet[name] = value
+        try:
+            for name,value,_ in fields_re.findall(line):
+                if name in FIELD_TYPES:
+                    if FIELD_TYPES[name] == int:
+                        value = int(value)
 
-        current_block += [packet]
-        if len(current_block) >= PACKETS_PER_BLOCK:
-            print insert_block(settings.table_name, USED_FIELDS, current_block)
-            current_block = []
+                if name == LENGTH_FIELD:
+                    if name in packet:
+                        value += packet[name]
+
+                packet[name] = value
+
+            current_block += [packet]
+            if len(current_block) >= PACKETS_PER_BLOCK:
+                print insert_block(settings.table_name, USED_FIELDS, current_block)
+                current_block = []
+        except:
+            error_count += 1
 
         line_count += 1
-        if line_count and not (line_count % 10000):
-            stderr.write('Analyzed %d lines\n' % line_count)
+        if not (line_count % 100000):
+            stderr.write('Analyzed %d lines, %d errors\n' % (line_count, error_count))            
 
     if len(current_block):
         print insert_block(settings.table_name, USED_FIELDS, current_block)
 
 finally:
     log.close()
-    stderr.write('Analyzed %d lines\n' % line_count)
+    stderr.write('Analyzed %d lines, %d errors\n' % (line_count, error_count))
