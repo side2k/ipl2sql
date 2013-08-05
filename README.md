@@ -29,14 +29,14 @@ Basic usage
 Syntax:
 
 <pre>
-python ipl2sql <logfile> <table_name>
+python ipl2sql &lt;logfile&gt; &lt;table_name&gt;
 </pre>
 
 ...where logfile is a iptables log file(see demo.log), and table_name is a name of table which will be used in DELETE and INSERT statements.
 
 <pre>
-python ipl2sql iptables.log packets > packets.sql
-mysql iptables < packets.sql
+python ipl2sql iptables.log packets &gt; packets.sql
+mysql iptables &lt; packets.sql
 </pre>
 
 .. or a simpler way:
